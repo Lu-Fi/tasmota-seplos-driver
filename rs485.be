@@ -551,7 +551,7 @@ class rs485 : Driver
         self.ser.write(0x0d)
     end
 
-    def every_100ms()
+    def every_250ms()
 
         if ! self.rxWait return end
 
