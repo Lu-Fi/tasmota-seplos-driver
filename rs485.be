@@ -492,8 +492,6 @@ class rs485 : Driver
 
     def json_append()
 
-        return
-        
         var t = self.sepl
 
         for e:t
