@@ -331,8 +331,8 @@ class rs485 : Driver
                     self.sepl[bmsAddress] = map()
                 end
 
-                self.sepl[bmsAddress]['Warnings'] = list()
-                self.sepl[bmsAddress]['Infos'] = list()
+                self.sepl[bmsAddress]['Warnings'] = []
+                self.sepl[bmsAddress]['Infos'] = []
 
                 for e:self.warnings
 
@@ -492,18 +492,26 @@ class rs485 : Driver
 
     def json_append()
 
+        return
+        
         var t = self.sepl
 
         for e:t
 
-            if e.contains('Warnings')
+            if e.contains('Warnings') 
 
-                e['Warnings'] = e['Warnings'].concat(", ")
+                if ! type(e['Warnings']) == "string" 
+
+                    e['Warnings'] = e['Warnings'].concat(", ")
+                end
             end
 
             if e.contains('Infos')
 
-                e['Infos'] = e['Infos'].concat(", ")
+                if ! type(e['Infos']) == "string" 
+
+                    e['Infos'] = e['Infos'].concat(", ")
+                end
             end            
         end
 
