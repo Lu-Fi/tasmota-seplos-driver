@@ -443,7 +443,7 @@ class rs485 : Driver
                 msg, b, self.sepl[b]['BatteryCapacity'])
                 
             msg = string.format(
-                "%s{s}BMS%iSOC{m}%.2f%%{e}",
+                "%s{s}BMS%iSOC{m}%i%%{e}",
                 msg, b, self.sepl[b]['SOC'])  
                 
             msg = string.format(
@@ -455,7 +455,7 @@ class rs485 : Driver
                 msg, b, self.sepl[b]['CycleLife'])      
             
             msg = string.format(
-                "%s{s}BMS%iSOH{m}%.2f%%{e}",
+                "%s{s}BMS%iSOH{m}%i%%{e}",
                 msg, b, self.sepl[b]['SOH'])  
                 
             msg = string.format(
