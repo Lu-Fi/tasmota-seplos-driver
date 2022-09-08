@@ -19,21 +19,26 @@ class rs485 : Driver
     var rxBuffer
     var rxBufferReset
 
+    var sep 
     var sepl
     var warnings
+
+    var fanTemp
 
     static ser = serial(17, 16, 19200, serial.SERIAL_8N1)
 
     def init()
 
-        self.sepl = map()
+        self.fanTemp = 26
+        self.sep = ", "
+        self.sepl = {}
         self.warnings = [
             #bit (1=multiple,2=info,4=field), message
             [1, "Cell"],
             [1, "Temperture"],
             [0, "Charging and discharging current"],
             [0, "Pack voltage"],
-            [0, "Custom"],
+            [0, ""],
             [0, [
                 "Voltage sensing failure",
                 "Temperature sensing failure",
@@ -43,7 +48,7 @@ class rs485 : Driver
                 "Charging switch failure",
                 "Discharging switch failure",
                 "Current limit switch failure"
-                ],"Warning 1"
+                ],"1"
             ],
             [0, [
                 "Cell over voltage warning",
@@ -54,7 +59,7 @@ class rs485 : Driver
                 "Pack over voltage protection",
                 "Pack low voltage warnings",
                 "Pack low voltage protection"
-                ],"Warning 2"
+                ],"2"
             ],
             [0, [
                 "Charging high temperature warnings",
@@ -65,7 +70,7 @@ class rs485 : Driver
                 "Discharging high temperature protection",
                 "Discharging low temperature warnings",
                 "Discharging low temperature protection"
-                ],"Warning 3"
+                ],"3"
             ],
             [0, [
                 "Ambient high temperature warnings",
@@ -76,7 +81,7 @@ class rs485 : Driver
                 "Component high temperature protection",
                 "Heating",
                 "Reserved"
-                ],"Warning 4"
+                ],"4"
             ],
             [0, [
                 "Charging over current warnings",
@@ -87,7 +92,7 @@ class rs485 : Driver
                 "Output short circuit protection",
                 "Transient over current lock",
                 "Output short circuit lock"
-                ],"Warning 5"
+                ],"5"
             ],
             [0, [
                 "Charging high voltage protection",
@@ -98,9 +103,9 @@ class rs485 : Driver
                 "Output reverse connection protection",
                 "Output connection failure",
                 "Internal bit"
-                ],"Warning 6"
+                ],"6"
             ],
-            [2, [
+            [0, [
                 "Discharge switch status",
                 "Charge switch status",
                 "Current limit switch status",
@@ -111,27 +116,9 @@ class rs485 : Driver
                 "Reserved"
                 ],"Power Status"
             ],
-            [2, [
-                "Equalization of cell 01",
-                "Equalization of cell 02",
-                "Equalization of cell 03",
-                "Equalization of cell 04",
-                "Equalization of cell 05",
-                "Equalization of cell 06",
-                "Equalization of cell 07",
-                "Equalization of cell 08"
-                ],"Equalization status 1"
+            [2, [ "", "", "", "", "", "", "", ""],"CellEqualization"
             ],
-            [2, [
-                "Equalization of cell 09",
-                "Equalization of cell 10",
-                "Equalization of cell 11",
-                "Equalization of cell 12",
-                "Equalization of cell 13",
-                "Equalization of cell 14",
-                "Equalization of cell 15",
-                "Equalization of cell 16"
-                ],"Equalization status 2"
+            [2, [ "", "", "", "", "", "", "", ""],"CellEqualization"
             ],
             [4, [
                 "Discharge",
@@ -142,29 +129,11 @@ class rs485 : Driver
                 "Power off",
                 "Reserved",
                 "Reserved"
-                ],"System status"
+                ],"SystemStatus"
             ],
-            [2, [
-                "Disconnection of cell 01",
-                "Disconnection of cell 02",
-                "Disconnection of cell 03",
-                "Disconnection of cell 04",
-                "Disconnection of cell 05",
-                "Disconnection of cell 06",
-                "Disconnection of cell 07",
-                "Disconnection of cell 08"
-                ],"Disconnection 1"
+            [2, [ "", "", "", "", "", "", "", ""],"CellDisconnection"
             ],
-            [2, [
-                "Disconnection of cell 09",
-                "Disconnection of cell 10",
-                "Disconnection of cell 11",
-                "Disconnection of cell 12",
-                "Disconnection of cell 13",
-                "Disconnection of cell 14",
-                "Disconnection of cell 15",
-                "Disconnection of cell 16"
-                ],"Disconnection 2"
+            [2, [ "", "", "", "", "", "", "", ""],"CellDisconnection"
             ],
             [0, [
                 "Internal bits",
@@ -175,7 +144,7 @@ class rs485 : Driver
                 "Manual charging wait",
                 "Internal bits",
                 "Internal bits"
-                ],"Warning 7"
+                ],"7"
             ],
             [0, [
                 "EEP Storage failure",
@@ -186,7 +155,7 @@ class rs485 : Driver
                 "Internal bits",
                 "Internal bits",
                 "Internal bits"
-                ],"Warning 8"
+                ],"8"
             ],
  
 
@@ -215,7 +184,7 @@ class rs485 : Driver
                 var bmsAddress = int('0x'+cmd[3..4].asstring())
                 if ! self.sepl.find(bmsAddress)
 
-                    self.sepl[bmsAddress] = map()
+                    self.sepl[bmsAddress] = {}
                 end
 
                 #protocoll version
@@ -228,7 +197,7 @@ class rs485 : Driver
                 offset += 2
 
                 #cell voltages
-                self.sepl[bmsAddress]['Cells'] = map()
+                self.sepl[bmsAddress]['Cells'] = {}
                 self.sepl[bmsAddress]['Cells']['min'] = 10000
                 self.sepl[bmsAddress]['Cells']['max'] = 0
                 self.sepl[bmsAddress]['Cells']['count'] = nCells
@@ -255,23 +224,23 @@ class rs485 : Driver
                 end
 
                 #temperatures
-                self.sepl[bmsAddress]['Tempertures'] = map()
+                self.sepl[bmsAddress]['Temperatures'] = {}
                 var nSensors = 
                     int( '0x' + cmd[offset..offset+1].asstring() )
                 offset += 2
 
-                self.sepl[bmsAddress]['Tempertures']['count'] = nSensors
+                self.sepl[bmsAddress]['Temperatures']['count'] = nSensors
 
                 for i:0..nSensors - 1
 
-                    self.sepl[bmsAddress]['Tempertures'][i] = 
+                    self.sepl[bmsAddress]['Temperatures'][i] = 
                         ( int( '0x' + cmd[offset..offset+3].asstring() ) - 2731.0 ) / 10.0
                     offset += 4
                 end
 
                 #bms current
                 self.sepl[bmsAddress]['Current'] = 
-                    int('0x'+cmd[offset..offset+3].asstring()) / 100.00
+                    bytes(cmd[offset..offset+3].asstring()).geti(0,-2) / 100.00
                 offset += 4
 
                 #bms voltage
@@ -328,60 +297,89 @@ class rs485 : Driver
                 var bmsAddress = int('0x'+cmd[2..3].asstring())
                 if ! self.sepl.find(bmsAddress)
                     
-                    self.sepl[bmsAddress] = map()
+                    self.sepl[bmsAddress] = {}
                 end
 
-                self.sepl[bmsAddress]['Warnings'] = []
-                self.sepl[bmsAddress]['Infos'] = []
+                self.sepl[bmsAddress]['Warnings'] = {}
+                self.sepl[bmsAddress]['Warnings']['Global'] = ""
+
+                var bms = self.sepl[bmsAddress]
+                var warn = self.sepl[bmsAddress]['Warnings']
 
                 for e:self.warnings
 
+                    var sep = ""
+
+                    #Simple Warning
                     if e[0] & 1 == 1
 
                         var n = int( '0x' + cmd[offset..offset+1].asstring() ) 
                         offset +=2   
-  
+
                         for i:0..n - 1
 
                             if int('0x'+cmd[offset..offset+1].asstring())
 
-                                self.sepl[bmsAddress]['Warnings'].push(e[1].." #"..i+1)
+                                warn[e[1]] = warn[e[1]]..sepl..i+1
+                                sep = self.sep 
                             end
                             offset +=2
                         end                            
                     else
 
+                        #Global
                         if e.size() == 2
 
-                            if int('0x'+cmd[offset..offset+1].asstring())
+                            if int('0x'+cmd[offset..offset+1].asstring()) 
 
-                                self.sepl[bmsAddress]['Warnings'].push(e[1])
-                            end                            
+                                if size(warn['Global']) > 0
+
+                                    sep = self.sep
+                                end
+                                warn['Global'] = warn['Global']..sep..e[1]
+                            end
+                        #Categorized                        
                         elif e.size() == 3
 
-                            var r = []
+                            var w = warn
+
+                            if e[0] & 4 == 4
+
+                                w = bms
+                            end
+
+                            if w.contains(e[2]) && ( e[0] & 4 != 4 )
+                                
+                                if size(w[e[2]]) > 0
+
+                                    sep = self.sep
+                                end
+                            else
+                                
+                                w[e[2]] = ""
+                            end
+
                             for i:0..(e[1].size())
 
-                                if int('0x'+cmd[offset..offset+1].asstring() ) & (1<<i) > 0
+                                if ( int('0x'+cmd[offset..offset+1].asstring() ) & (1<<i) > 0 ) && size(e[1])
 
-                                    r.push(e[1][i])  
+                                    #Multiple (Cells, Temperatures)
+                                    if e[0] & 2 == 2
+                                        
+                                        w[e[2]] = w[e[2]]..sep..i
+                                    #Status (SystemStatus)
+                                    elif e[0] & 4 == 4
+
+                                        w[e[2]] = w[e[2]]..sep..e[1][i]     
+                                    #Subcategorized                                  
+                                    else
+
+                                        w[e[2]] = w[e[2]]..sep..e[1][i]  
+                                    end
+
+                                    sep = self.sep 
                                 end
-                            end
-
-                            if r.size() 
-
-                                #only info no warning / protection
-                                if e[0] & 2 == 2
-                                    
-                                    self.sepl[bmsAddress]['Infos'].push(e[2]..": "..r.concat(", "))
-                                elif e[0] & 4 == 4 
-
-                                    self.sepl[bmsAddress][e[2]] = r.concat(", ")
-                                else
-
-                                    self.sepl[bmsAddress]['Warnings'].push(e[2]..": "..r.concat(", "))
-                                end
-                            end
+                            end                          
                         end
 
                         offset +=2
@@ -398,7 +396,7 @@ class rs485 : Driver
 
         var msg = ""
 
-        for b:0..0 #size(self.sepl) - 1
+        for b:self.sepl.keys()
 
             for c:0..self.sepl[b]['Cells']['count'] - 1
 
@@ -419,11 +417,11 @@ class rs485 : Driver
                 "%s{s}BMS%iCellDiff{m}%imv{e}",
                 msg, b, self.sepl[b]['Cells']['diff'])
 
-            for t:0..self.sepl[b]['Tempertures']['count'] - 1
+            for t:0..self.sepl[b]['Temperatures']['count'] - 1
 
                 msg = string.format(
                         "%s{s}BMS%iTemp%i{m}%.1f°C{e}",
-                        msg, b, t + 1, self.sepl[b]['Tempertures'][t])
+                        msg, b, t + 1, self.sepl[b]['Temperatures'][t])
             end  
             
             msg = string.format(
@@ -462,6 +460,13 @@ class rs485 : Driver
                 "%s{s}BMS%iPortVoltage{m}%.2fV{e}",
                 msg, b, self.sepl[b]['PortVoltage'])   
 
+            if self.sepl[b].contains("Fan")
+
+                msg = string.format(
+                    "%s{s}BMS%iFan{m}%i{e}",
+                    msg, b, self.sepl[b]['Fan'])  
+            end
+
             for e:self.warnings                
 
                 if e[0] & 4 == 4 && self.sepl[b].contains(e[2])
@@ -474,17 +479,13 @@ class rs485 : Driver
             
             if self.sepl[b].contains('Warnings')
 
-                msg = string.format(
-                    "%s{s}BMS%iWarnings{m}%s{e}",
-                    msg, b, self.sepl[b]['Warnings'].concat("<br />"))   
-            end
+                for e:self.sepl[b]['Warnings'].keys()
 
-            if self.sepl[b].contains('Infos')
-
-                msg = string.format(
-                    "%s{s}BMS%iInfo{m}%s{e}",
-                    msg, b, self.sepl[b]['Infos'].concat("<br />"))   
-            end              
+                    msg = string.format(
+                        "%s{s}BMS%iWarning%s{m}%s{e}",
+                        msg, b, e, self.sepl[b]['Warnings'][e])
+                end
+            end            
         end
 
         tasmota.web_send_decimal(msg)
@@ -492,29 +493,8 @@ class rs485 : Driver
 
     def json_append()
 
-        var t = self.sepl
-
-        for e:t
-
-            if e.contains('Warnings') 
-
-                if ! type(e['Warnings']) == "string" 
-
-                    e['Warnings'] = e['Warnings'].concat(", ")
-                end
-            end
-
-            if e.contains('Infos')
-
-                if ! type(e['Infos']) == "string" 
-
-                    e['Infos'] = e['Infos'].concat(", ")
-                end
-            end            
-        end
-
         tasmota.response_append(
-            ',"seplos":'..json.dump(t))
+            ',"seplos":'..json.dump(self.sepl))
     end
 
     def requestUpdate(adapter, function, data) 
@@ -609,6 +589,28 @@ class rs485 : Driver
         else
 
             self.updateInfo -= 1
+        end   
+
+        if self.updateTeleperiod >= 14
+
+            if self.sepl.contains(0)
+
+                if self.sepl[0].contains('Temperatures')
+
+                    if self.sepl[0]['Temperatures'].size() >= 3
+
+                        if self.sepl[0]['Temperatures'][4] > self.fanTemp
+
+                            gpio.pin_mode(2, gpio.PULLUP)
+                            self.sepl[0]['Fan'] = 1
+                        elif self.sepl[0]['Temperatures'][4] < self.fanTemp - 1
+
+                            gpio.pin_mode(2, gpio.PULLDOWN)
+                            self.sepl[0]['Fan'] = 0
+                        end
+                    end
+                end
+            end
         end        
     end
 end  
