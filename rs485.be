@@ -1,7 +1,7 @@
 ####################################################
 ##
 ##  Seplos BMS driver
-##  v 0.1
+##  v 0.2
 ##  Lutz Fiebach
 ##
 ####################################################
@@ -116,9 +116,9 @@ class rs485 : Driver
                 "Reserved"
                 ],"Power Status"
             ],
-            [2, [ "", "", "", "", "", "", "", ""],"CellEqualization"
+            [2, [ "1", "2", "3", "4", "5", "6", "7", "8"],"CellEqualization"
             ],
-            [2, [ "", "", "", "", "", "", "", ""],"CellEqualization"
+            [2, [ "9", "10", "11", "12", "13", "14", "15", "16"],"CellEqualization"
             ],
             [4, [
                 "Discharge",
@@ -131,9 +131,9 @@ class rs485 : Driver
                 "Reserved"
                 ],"SystemStatus"
             ],
-            [2, [ "", "", "", "", "", "", "", ""],"CellDisconnection"
+            [2, [ "1", "2", "3", "4", "5", "6", "7", "8"],"CellDisconnection"
             ],
-            [2, [ "", "", "", "", "", "", "", ""],"CellDisconnection"
+            [2, [ "9", "10", "11", "12", "13", "14", "15", "16"],"CellDisconnection"
             ],
             [0, [
                 "Internal bits",
@@ -320,11 +320,11 @@ class rs485 : Driver
 
                             if int('0x'+cmd[offset..offset+1].asstring())
 
-                                if ! warn.contains("e[1]")
+                                if ! warn.contains(e[1])
 
                                     warn[e[1]] = ""
                                 end
-                                warn[e[1]] = warn[e[1]]..sepl..i+1
+                                warn[e[1]] = warn[e[1]]..sep..i+1
                                 sep = self.sep 
                             end
                             offset +=2
@@ -367,25 +367,12 @@ class rs485 : Driver
 
                                 if ( int('0x'+cmd[offset..offset+1].asstring() ) & (1<<i) > 0 ) && size(e[1])
 
-                                    #Multiple (Cells, Temperatures)
-                                    if e[0] & 2 == 2
-                                        
-                                        w[e[2]] = w[e[2]]..sep..i
-                                    #Status (SystemStatus)
-                                    elif e[0] & 4 == 4
-
-                                        w[e[2]] = w[e[2]]..sep..e[1][i]     
-                                    #Subcategorized                                  
-                                    else
-
-                                        w[e[2]] = w[e[2]]..sep..e[1][i]  
-                                    end
+                                    w[e[2]] = w[e[2]]..sep..e[1][i]
 
                                     sep = self.sep 
                                 end
-                            end                          
+                            end 
                         end
-
                         offset +=2
                     end
                 end
