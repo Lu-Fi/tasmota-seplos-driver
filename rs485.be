@@ -320,6 +320,10 @@ class rs485 : Driver
 
                             if int('0x'+cmd[offset..offset+1].asstring())
 
+                                if ! warn.contains("e[1]")
+
+                                    warn[e[1]] = ""
+                                end
                                 warn[e[1]] = warn[e[1]]..sepl..i+1
                                 sep = self.sep 
                             end
