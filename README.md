@@ -13,3 +13,6 @@ v0.1 - First implementation
 Used parts:  
 >1 x [Esp32 Dev board](http://www.amazon.de/dp/B071P98VTG/)  
 >1 x [TTL Zu RS485 Adapter 485 Serieller Port UART Level Converter Modul 3.3V 5V](https://www.amazon.de/dp/B07DJ4TGY3/)  
+
+
+https://forum.drbacke.de/viewtopic.php?t=5454
