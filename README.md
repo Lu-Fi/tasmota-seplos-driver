@@ -4,6 +4,8 @@ Berry-Treiber für Tasmota (ESP32), der ein oder mehrere **Seplos BMS** (EMU10XX
 
 Basiert auf der originalen Seplos-Dokumentation *SEPLOS BMS Communication Protocol V2.0* (MODBUS-ASCII nach YD/T1363.3) sowie den Protokoll-XMLs (`Agreement`-Ordner) der Seplos BatteryMonitor-Software.
 
+![Tasmota-Weboberfläche](docs/webui.png)
+
 ## Features
 
 - **Telemetrie (42H)**: Zellspannungen, Temperaturen, Strom (vorzeichenbehaftet), Packspannung, SOC, SOH, Kapazitäten, Zyklen, Portspannung
